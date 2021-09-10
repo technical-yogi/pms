@@ -7,12 +7,17 @@ import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
 import Typography from "@material-ui/core/Typography";
 import Box from "@material-ui/core/Box";
+import history from "../history";
 //import Form from './Form';
 import { TextField } from "@material-ui/core";
 import PropTypes from "prop-types";
-import axios from "axios";
+//import axios from "axios";
 import { setName, setPwd, setRule } from "../actions/pmsaction";
-import { useDispatch } from "react-redux";
+import { signUpRequest, logInRequest } from "../actions/index";
+import { useDispatch, useSelector } from "react-redux";
+import jwt from "jsonwebtoken";
+import Select from "@material-ui/core/Select";
+import MenuItem from "@material-ui/core/MenuItem";
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -66,32 +71,86 @@ const useStyles = makeStyles(theme => ({
 
 const Register = () => {
   const dispatch = useDispatch();
+  
+  const selectorState = useSelector(
+    state => state && state.api_state && state.api_state
+  );
+  const selectorState2 = useSelector(
+    state => state && state.loginState && state.loginState
+  );
+
+  React.useEffect(()=>{
+    if (localStorage.getItem("token")) {
+      history.push("/Dashboard");
+    }
+  },[])
+
+  React.useEffect(() => {
+    console.log(selectorState2, "selectorState2");
+
+    // if (selectorState2.data != null) {
+    //   let user = jwt.verify(selectorState2.data.token, "jwt_tok");
+    //   setToken(selectorState2.data.token);
+    //   setUserType(user.role);
+    // }
+    if (selectorState2.isSuccess) {
+      if(selectorState2.data.error === 0)
+      {
+      history.push("/Dashboard");
+      }
+      else{
+        // some messag to display username and password is invalid 
+      }
+      
+    }
+  }, [selectorState2]);
+
+  //for understanding purpose above step only
+
   const classes = useStyles();
+
   const [credentials, setCredentials] = React.useState({
     username: "",
     password: "",
     role: ""
   });
+
+  const [inputValue, setvalue] = useState({
+    username: "",
+    password: ""
+  });
+
   const [value, setValue] = React.useState(0);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  const handleSubmit = () => {
-      if(credentials.username && credentials.password && credentials.role){
-        dispatch(signUpRequest({...credentials}))
-      }
-  }
+  const handleSubmit = e => {
+    e.preventDefault();
+    if (credentials.username && credentials.password && credentials.role) {
+      // console.log(credentials, "__________credentials");
+      dispatch(signUpRequest({ ...credentials }));
+    }
+  };
 
-  //api work will
-  // const [apiData, setapiData] = useState([]);
-  //   const[username,setname] =useState('');
-  //   const[password,setpassword] =useState('');
-  //   const[role,setrole] =useState('');
+  const loginSubmit = e => {
+    e.preventDefault();
+    if (inputValue.username && inputValue.password) {
+      dispatch(logInRequest({ ...inputValue }));
+    }
+
+    //first here i should check credential is true or not then landing on another page will be done
+    if (selectorState2.isSuccess && selectorState2.data != null) {
+      console.log("action should be performed");
+    }
+  };
+
   const handleUsername = (e, key) => {
-    // dispatch(setName(e.target.value));
     setCredentials({ ...credentials, [key]: e.target.value });
+  };
+  const setUserValue = (e, key) => {
+    setvalue({ ...inputValue, [key]: e.target.value });
   };
 
   console.log(credentials.username, "asdfghjkl", credentials.password);
@@ -151,29 +210,68 @@ const Register = () => {
                   variant="filled"
                   required
                   onChange={e => handleUsername(e, "role")}
-                //   onChange={handleChan}
+                  //   onChange={handleChan}
                 />
+                {/* <Select
+          labelId="demo-simple-select-filled-label"
+          id="demo-simple-select-filled"
+         // value={age}
+          onChange= {e => handleUsername(e, "role")}
+        >
+          <MenuItem value="">
+            <em>None</em>
+          </MenuItem>
+          <MenuItem value={"user"}>user</MenuItem>
+          <MenuItem value={"admin"}>admin</MenuItem>
+        </Select>  */}
+
                 <div>
-                  <Button variant="contained">Cancel</Button>
-                  <Button type="submit" variant="contained" color="primary">
-                    Signup
+                  <Button
+                    variant="contained"
+                    disabled={selectorState.isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={selectorState.isLoading}
+                  >
+                    {selectorState.isLoading ? "Please Wait" : "Signup"}
                   </Button>
                 </div>
               </form>
             </TabPanel>
             <TabPanel value={value} index={1}>
-              <form className={classes.form}>
-                <TextField label="Username" variant="filled" required />
+              <form className={classes.form} onSubmit={loginSubmit}>
+                <TextField
+                  label="Username"
+                  variant="filled"
+                  required
+                  onChange={e => setUserValue(e, "username")}
+                />
                 <TextField
                   label="Password"
                   variant="filled"
                   type="password"
                   required
+                  onChange={e => setUserValue(e, "password")}
                 />
                 <div>
-                  <Button variant="contained">Cancel</Button>
-                  <Button type="submit" variant="contained" color="primary">
-                    Login
+                  <Button
+                    variant="contained"
+                    disabled={selectorState2.isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={selectorState2.isLoading}
+                  >
+                    {selectorState2.isLoading ? "Please Wait" : "Login"}
                   </Button>
                 </div>
               </form>
